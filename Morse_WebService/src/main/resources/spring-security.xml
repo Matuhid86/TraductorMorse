@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bean:beans xmlns:context="http://www.springframework.org/schema/context" 
+    xmlns:bean="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:tx="http://www.springframework.org/schema/tx" 
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
+		http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+
+	<context:annotation-config/>
+ 	
+	<context:component-scan base-package="com.morse" />
+	
+	<mvc:annotation-driven />
+  	
+  	<tx:annotation-driven />
+  	
+	<global-method-security secured-annotations="enabled" />
+	
+	<http realm="Protected API" use-expressions="true" entry-point-ref="unauthorizedEntryPoint" authentication-manager-ref="restAuthenticationManager">
+		<custom-filter ref="restAuthenticationFilter" position="FORM_LOGIN_FILTER" />
+
+		<intercept-url pattern="/*" access="permitAll" />
+		<intercept-url pattern="/secure/**" access="isFullyAuthenticated()" />
+	</http>
+
+	<bean:bean id="unauthorizedEntryPoint" class="com.base.ws.security.UnauthorizedEntryPoint" />
+	
+	<bean:bean id="userDetailService" class="com.morse.ws.security.UserDetailService"/>
+ 
+	<authentication-manager id="restAuthenticationManager">
+	    <authentication-provider user-service-ref="userDetailService">
+	        <password-encoder hash="md5" />
+		</authentication-provider>
+    </authentication-manager>
+	
+	<bean:bean id="tokenManager" class="com.base.ws.security.TokenManager" />
+		
+	<bean:bean id="authenticationService" class="com.base.ws.security.UserAuthenticationService" 
+	    c:authenticationManager-ref="restAuthenticationManager" c:tokenManager-ref="tokenManager" />
+
+	<bean:bean id="restAuthenticationFilter" class="com.base.ws.security.TokenAuthenticationFilter" 
+	    c:authenticationService-ref="authenticationService" c:logoutLink="/logout" />
+</bean:beans>
